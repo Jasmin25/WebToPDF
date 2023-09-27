@@ -1,0 +1,5 @@
+Flask
+selenium
+pdfkit
+beautifulsoup4
+requests
