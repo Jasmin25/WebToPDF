@@ -50,7 +50,7 @@ def get_pdf_from_url(url):
 
         config = pdfkit.configuration(wkhtmltopdf=os.environ.get('WKHTMLTOPDF_BINARY', 'wkhtmltopdf'))
         pdf_path = os.path.join(os.getcwd(), f"{title}.pdf")
-        pdfkit.from_url(url, pdf_path, configuration=config)
+        pdfkit.from_url(url, pdf_path, configuration=config, options={'no-check-certificate': ''})
 
         if os.path.exists(pdf_path):
             return pdf_path
