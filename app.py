@@ -48,9 +48,10 @@ def get_pdf_from_url(url):
         for char in invalid_chars:
             title = title.replace(char, '_')
 
+        config = pdfkit.configuration(wkhtmltopdf=os.environ.get('WKHTMLTOPDF_BINARY', 'wkhtmltopdf'))
         pdf_path = os.path.join(os.getcwd(), f"{title}.pdf")
-        
-        pdfkit.from_url(url, pdf_path)
+        pdfkit.from_url(url, pdf_path, configuration=config)
+
         if os.path.exists(pdf_path):
             return pdf_path
     except Exception as e:
