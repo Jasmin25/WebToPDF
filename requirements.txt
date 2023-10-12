@@ -1,6 +1,5 @@
 Flask
-selenium
-pdfkit
+selenium==4.1.3
 beautifulsoup4
 requests
 gunicorn

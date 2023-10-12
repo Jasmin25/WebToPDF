@@ -1,67 +1,62 @@
-from flask import Flask, request, send_from_directory, render_template
 import os
-import pdfkit
-from bs4 import BeautifulSoup
-import requests
+import json
+import base64
+from datetime import datetime
+from selenium import webdriver
+from flask import Flask, render_template, request, send_from_directory
 
 app = Flask(__name__)
 
-# Read the whitelist domains from whitelist.txt into a set
-with open('whitelist.txt', 'r') as f:
-    DOMAIN_WHITELIST = {line.strip() for line in f}
+chrome_bin = os.environ.get('GOOGLE_CHROME_BIN', 'chromedriver')
+chrome_driver_path = os.environ.get('CHROMEDRIVER_PATH', './chromedriver')
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         url = request.form['url']
-        domain = url.split('://')[-1].split('/')[0]
-
-        if domain not in DOMAIN_WHITELIST:
-            return "This app does not support downloading PDFs from this domain."
-
-        pdf_path = get_pdf_from_url(url)
-
-        if not pdf_path:
-            return "Error generating PDF."
-
-        return send_from_directory(directory=os.path.dirname(pdf_path), path=os.path.basename(pdf_path))
-
+        pdf_path = generate_pdf(url)
+        return send_from_directory(os.getcwd(), pdf_path, as_attachment=True)
     return render_template('index.html')
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        login_url = request.form['login_url']
-        driver.get(login_url)  # The global driver will use this login link to login
-        return "Logged in successfully!"
+def generate_pdf(url):
+    out_file = f'z_test_{datetime.now().strftime("%y%m%d-%H%M%S.%f")}.pdf'
+    out_path = os.getcwd()
+    out_path_full = f"{out_path}/{out_file}"
 
-    return render_template('login.html')
+    wd_dcap = webdriver.DesiredCapabilities.CHROME.copy()
+    wd_opts = webdriver.chrome.options.Options()
+    wd_opts.add_argument('--headless')
+    wd_opts.add_argument('--disable-gpu')
 
-def get_pdf_from_url(url):
-    try:
-        response = requests.get(url)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        title = soup.title.string if soup.title else "untitled"
-        
-        # Clean the title for characters that might cause issues in filenames
-        invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*']
-        for char in invalid_chars:
-            title = title.replace(char, '_')
+    wd_opts.binary_location = chrome_bin
+    chr_svc = webdriver.chrome.service.Service(chrome_driver_path)
+    # chr_svc = webdriver.chrome.service.Service('./dist/chromedriver')
 
-        config = pdfkit.configuration(wkhtmltopdf='/usr/local/bin/wkhtmltopdf')
-        pdf_path = os.path.join(os.getcwd(), f"{title}.pdf")
-        pdfkit.from_url(url, pdf_path, configuration=config)
-        # pdfkit.from_url(url, pdf_path)
+    with webdriver.Chrome(service=chr_svc, options=wd_opts, desired_capabilities=wd_dcap) as driver:
+        driver.get(url)
+        assert driver.page_source != '<html><head></head><body></body></html>' ,f"Url could not be loaded: {url}"
+        result = send_cmd(driver, "Page.printToPDF")
 
+        with open(out_path_full, 'wb') as file:
+            file.write(base64.b64decode(result['data']))
 
-        if os.path.exists(pdf_path):
-            return pdf_path
-    except Exception as e:
-        print(f"Error: {e}")
+    if not os.path.isfile(out_path_full):
+        raise Exception(f"PDF WAS NOT GENERATED: {out_path_full}")
 
-    return None
+    return out_file
 
+def send_cmd(driver, cmd, params={}):
+    response = driver.command_executor._request(
+       'POST'
+      ,f"{driver.command_executor._url}/session/{driver.session_id}/chromium/send_command_and_get_result"
+      ,json.dumps({'cmd': cmd, 'params': params}))
+    if response.get('status'): raise Exception(response.get('value'))
+    return response.get('value')
+
+@app.route('/download/<filename>')
+def download(filename):
+    return send_from_directory(os.getcwd(), filename, as_attachment=True)
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(debug=True)
