@@ -4,6 +4,8 @@ import base64
 from datetime import datetime
 from selenium import webdriver
 from flask import Flask, render_template, request, send_from_directory
+from selenium.webdriver.support.ui import WebDriverWait
+
 
 app = Flask(__name__)
 
@@ -18,6 +20,11 @@ def index():
         pdf_path = generate_pdf(url)
         return send_from_directory(os.getcwd(), pdf_path, as_attachment=True)
     return render_template('index.html')
+
+def _waitForDocReady(driver):
+    rs = driver.execute_script('return document.readyState;')
+    if rs == 'complete': return True
+    return False
 
 def generate_pdf(url):
     out_file = f'z_test_{datetime.now().strftime("%y%m%d-%H%M%S.%f")}.pdf'
@@ -37,6 +44,7 @@ def generate_pdf(url):
 
     with webdriver.Chrome(service=chr_svc, options=wd_opts, desired_capabilities=wd_dcap) as driver:
         driver.get(url)
+        WebDriverWait(driver, timeout=5, poll_frequency=0.5).until(_waitForDocReady)
         assert driver.page_source != '<html><head></head><body></body></html>' ,f"Url could not be loaded: {url}"
         result = send_cmd(driver, "Page.printToPDF")
 
