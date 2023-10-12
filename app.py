@@ -28,6 +28,8 @@ def generate_pdf(url):
     wd_opts = webdriver.chrome.options.Options()
     wd_opts.add_argument('--headless')
     wd_opts.add_argument('--disable-gpu')
+    wd_opts.add_argument("--no-sandbox")
+    wd_opts.add_argument("--remote-debugging-port=9222")
 
     wd_opts.binary_location = chrome_bin
     chr_svc = webdriver.chrome.service.Service(chrome_driver_path)
