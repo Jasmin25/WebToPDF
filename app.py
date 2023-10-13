@@ -1,6 +1,7 @@
 import os
 import json
 import base64
+from time import sleep
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
@@ -9,9 +10,8 @@ from flask import Flask, render_template, request, send_from_directory
 
 app = Flask(__name__)
 
-chrome_bin = os.environ.get('GOOGLE_CHROME_BIN', 'chromedriver')
-chrome_driver_path = os.environ.get('CHROMEDRIVER_PATH', './chromedriver')
-
+chrome_bin = os.environ.get('GOOGLE_CHROME_BIN', './dist/chromedriver')
+chrome_driver_path = os.environ.get('CHROMEDRIVER_PATH', './dist/chromedriver')
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -44,6 +44,7 @@ def generate_pdf(url):
 
     with webdriver.Chrome(service=chr_svc, options=wd_opts, desired_capabilities=wd_dcap) as driver:
         driver.get(url)
+        sleep(10)
         WebDriverWait(driver, timeout=15, poll_frequency=1).until(_waitForDocReady)
         assert driver.page_source != '<html><head></head><body></body></html>' ,f"Url could not be loaded: {url}"
         result = send_cmd(driver, "Page.printToPDF")
