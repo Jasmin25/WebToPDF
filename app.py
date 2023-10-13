@@ -3,8 +3,8 @@ import json
 import base64
 from datetime import datetime
 from selenium import webdriver
-from flask import Flask, render_template, request, send_from_directory
 from selenium.webdriver.support.ui import WebDriverWait
+from flask import Flask, render_template, request, send_from_directory
 
 
 app = Flask(__name__)
@@ -44,7 +44,7 @@ def generate_pdf(url):
 
     with webdriver.Chrome(service=chr_svc, options=wd_opts, desired_capabilities=wd_dcap) as driver:
         driver.get(url)
-        WebDriverWait(driver, timeout=5, poll_frequency=0.5).until(_waitForDocReady)
+        WebDriverWait(driver, timeout=15, poll_frequency=1).until(_waitForDocReady)
         assert driver.page_source != '<html><head></head><body></body></html>' ,f"Url could not be loaded: {url}"
         result = send_cmd(driver, "Page.printToPDF")
 
