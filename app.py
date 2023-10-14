@@ -36,24 +36,27 @@ def generate_pdf(url):
     wd_opts.add_argument('--headless')
     wd_opts.add_argument('--disable-gpu')
     wd_opts.add_argument("--no-sandbox")
+    wd_opts.add_argument("--disable-dev-shm-usage") # Added this line
     wd_opts.add_argument("--remote-debugging-port=9222")
+    # wd_opts.binary_location = chrome_bin
 
-    wd_opts.binary_location = chrome_bin
     chr_svc = webdriver.chrome.service.Service(chrome_driver_path)
-    # chr_svc = webdriver.chrome.service.Service('./dist/chromedriver')
+    try:
+        with webdriver.Chrome(service=chr_svc, options=wd_opts, desired_capabilities=wd_dcap) as driver:
+            driver.get(url)
+            WebDriverWait(driver, timeout=30, poll_frequency=2).until(_waitForDocReady)
+            assert driver.page_source != '<html><head></head><body></body></html>', f"Url could not be loaded: {url}"
+            result = send_cmd(driver, "Page.printToPDF")
 
-    with webdriver.Chrome(service=chr_svc, options=wd_opts, desired_capabilities=wd_dcap) as driver:
-        driver.get(url)
-        sleep(10)
-        WebDriverWait(driver, timeout=15, poll_frequency=1).until(_waitForDocReady)
-        assert driver.page_source != '<html><head></head><body></body></html>' ,f"Url could not be loaded: {url}"
-        result = send_cmd(driver, "Page.printToPDF")
+            with open(out_path_full, 'wb') as file:
+                file.write(base64.b64decode(result['data']))
 
-        with open(out_path_full, 'wb') as file:
-            file.write(base64.b64decode(result['data']))
+        if not os.path.isfile(out_path_full):
+            raise Exception(f"PDF WAS NOT GENERATED: {out_path_full}")
 
-    if not os.path.isfile(out_path_full):
-        raise Exception(f"PDF WAS NOT GENERATED: {out_path_full}")
+    except Exception as e:
+        print(f"Error encountered: {e}")
+        return None  # Return None or appropriate error message in case of failure
 
     return out_file
 
