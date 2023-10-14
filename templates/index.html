@@ -2,12 +2,23 @@
 <html>
 <head>
     <title>URL to PDF Converter</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
 </head>
 <body>
-    <h1>Enter a URL to Convert to PDF</h1>
-    <form action="/" method="post">
-        <input type="url" name="url" required placeholder="Enter URL...">
-        <input type="submit" value="Generate PDF">
-    </form>
+    <section class="section">
+        <div class="container">
+            <h1 class="title">Enter a URL to Convert to PDF</h1>
+            <form action="/" method="post">
+                <div class="field">
+                    <div class="control">
+                        <input class="input is-large" type="url" name="url" required placeholder="Enter URL...">
+                    </div>
+                </div>
+                <div class="control">
+                    <button class="button is-link is-large">Generate PDF</button>
+                </div>
+            </form>
+        </div>
+    </section>
 </body>
 </html>
