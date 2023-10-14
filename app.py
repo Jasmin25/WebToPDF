@@ -18,7 +18,11 @@ browser = None
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    # ... [unchanged]
+    if request.method == 'POST':
+        url = request.form['url']
+        pdf_path = generate_pdf(url)
+        return send_from_directory(os.getcwd(), pdf_path, as_attachment=True)
+    return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
