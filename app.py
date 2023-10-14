@@ -72,7 +72,10 @@ def generate_pdf(url):
         
         result = send_cmd(browser, "Page.printToPDF")
 
-        out_file = f'z_test_{datetime.now().strftime("%y%m%d-%H%M%S.%f")}.pdf'
+        # Fetch the title and sanitize it to ensure it's safe for a filename
+        safe_title = "".join(x for x in browser.title if x.isalnum() or x in [" ", "-"]).rstrip()
+        timestamp = datetime.now().strftime("%y%m%d-%H%M%S")
+        out_file = f"{safe_title}_{timestamp}.pdf"
         out_path = os.getcwd()
         out_path_full = f"{out_path}/{out_file}"
 
