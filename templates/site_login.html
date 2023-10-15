@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Login</title>
+    <title>Login with URL</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
 </head>
 <body>
     <section class="section">
         <div class="container">
-            <h1 class="title">Login with Password</h1>
+            <h1 class="title">Login with URL</h1>
             <form action="/login" method="post">
                 <div class="field">
-                    <label class="label" for="password">Password:</label>
+                    <label class="label" for="login_url">Login URL:</label>
                     <div class="control">
-                        <input class="input" type="password" id="password" name="password" required>
+                        <input class="input" type="url" id="login_url" name="login_url" required>
                     </div>
                 </div>
                 <div class="control">

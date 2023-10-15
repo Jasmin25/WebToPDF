@@ -5,18 +5,61 @@ from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from flask import Flask, render_template, request, send_from_directory
+from flask import session, redirect, url_for
+
 
 app = Flask(__name__)
+
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersecretkey")
+
+PASSWORD = os.environ.get("PASSWORD", "yourpassword")
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """
+    Render the login page and handle login functionality.
+    
+    - On POST: Validates the password and logs the user in if correct.
+    - On GET: Renders the login page.
+    """
+    if request.method == 'POST':
+        password = request.form['password']
+        if password == PASSWORD:
+            session['logged_in'] = True
+            return redirect(url_for('index'))
+        return "Wrong password!", 401
+    return render_template('login.html')
+
+def check_login():
+    """
+    Checks if a user is logged in.
+    
+    Redirects the user to the login page if not logged in.
+    """
+    if 'logged_in' not in session:
+        return redirect(url_for('login'))
 
 chrome_bin = os.environ.get('GOOGLE_CHROME_BIN', './dist/chromedriver')
 chrome_driver_path = os.environ.get('CHROMEDRIVER_PATH', './dist/chromedriver')
 
 browser = None
 
+@app.route('/logout')
+def logout():
+    """
+    Logs out the user by clearing the session.
+    
+    Redirects the user to the login page.
+    """
+    session.pop('logged_in', None)
+    return redirect(url_for('login'))
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     """Render main page and process form data to generate PDF from URL."""
+    response = check_login()
+    if response: return response
+
     if request.method == 'POST':
         url = request.form['url']
         pdf_path = generate_pdf(url)
@@ -24,10 +67,13 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
+@app.route('/site-login', methods=['GET', 'POST'])
+def site_login():
     """Render login page and process form data to set login session."""
     global browser
+
+    response = check_login()
+    if response: return response
 
     if request.method == 'POST':
         login_url = request.form['login_url']
@@ -39,7 +85,7 @@ def login():
         browser.get(login_url)
         return "Logged in successfully!"
 
-    return render_template('login.html')
+    return render_template('site_login.html')
 
 
 def get_browser():
