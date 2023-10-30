@@ -78,10 +78,9 @@ def site_login():
     if request.method == 'POST':
         login_url = request.form['login_url']
 
-        if browser:
-            browser.quit()
+        if not browser:
+            browser = get_browser()
 
-        browser = get_browser()
         browser.get(login_url)
         return "Logged in successfully!"
 
