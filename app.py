@@ -6,9 +6,12 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from flask import Flask, render_template, request, send_from_directory
 from flask import session, redirect, url_for
-
+from flask_apscheduler import APScheduler
+from urllib.parse import urlparse
 
 app = Flask(__name__)
+scheduler = APScheduler()
+scheduler.init_app(app)
 
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "supersecretkey")
 
@@ -82,6 +85,11 @@ def site_login():
             browser = get_browser()
 
         browser.get(login_url)
+
+        # Add domain to file after successful login
+        domain = extract_domain(login_url)
+        write_domain_to_file(domain)
+
         return "Logged in successfully!"
 
     return render_template('site_login.html')
@@ -156,6 +164,43 @@ def send_cmd(driver, cmd, params={}):
 
     return response.get('value')
 
+
+def extract_domain(login_url):
+    parsed_url = urlparse(login_url)
+    return parsed_url.netloc
+
+def write_domain_to_file(domain):
+    with open("sites.txt", "a+") as file:
+        file.seek(0)
+        if domain not in file.read().splitlines():
+            file.write(domain + "\n")
+
+def keep_session_alive_for_domain(domain):
+    global browser
+    if not browser:
+        browser = get_browser()
+    try:
+        keep_alive_url = f"https://{domain}"
+        browser.get(keep_alive_url)
+    except Exception as e:
+        print(f"Error keeping session alive for {domain}: {e}")
+
+def trigger_keep_alive_for_sites():
+    try:
+        with open("sites.txt", "r") as file:
+            for domain in file:
+                keep_session_alive_for_domain(domain.strip())
+    except FileNotFoundError:
+        print("The sites.txt file does not exist. No action taken.")
+    except Exception as e:
+        print(f"An error occurred while trying to read sites.txt: {e}")
+
+# Schedule the job
+scheduler.add_job(id='SessionKeepAlive', func=trigger_keep_alive_for_sites, trigger='interval', hours=3)
+
+# Start the scheduler
+if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    scheduler.start()
 
 @app.route('/download/<filename>')
 def download(filename):
