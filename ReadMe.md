@@ -1,6 +1,6 @@
 # Webpage PDF Generator :page_with_curl:
 
-Webpage PDF Generator is a Flask web application that converts any Webpage URLs into PDF files. It can also handle user authentication for protected pages that require login before content can be accessed.
+Webpage PDF Generator is a Flask web application that converts any Webpage URL into PDF file and downloads on the user's machine. It can also handle user authentication for protected pages that require login before content can be accessed.
 
 ## Features :sparkles:
 
